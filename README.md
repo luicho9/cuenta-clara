@@ -1,36 +1,152 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Suyapa — tu contadora en WhatsApp
 
-## Getting Started
+WhatsApp-native AI accountant for LATAM micro-businesses (barberías, pulperías, small shops). Send a voice note in Spanish describing sales and expenses — Suyapa extracts structured transactions, confirms via interactive WhatsApp cards, and sends a daily P&L summary at 8 pm.
 
-First, run the development server:
+Built for the **Vercel Zero to Agent hackathon**, ChatSDK Agents track.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## How it works
+
+1. **Voice or text** — the owner sends a WhatsApp message: _"vendí 3 cortes a 200 cada uno"_
+2. **AI extraction** — Claude Sonnet 4.6 via AI Gateway parses the message into a structured transaction (type, items, total, confidence)
+3. **Confirmation card** — Suyapa replies with an interactive card showing the itemized transaction, with **Borrar** and **Ver resumen** buttons
+4. **Daily close** — at 8 pm Tegucigalpa a cron job sends each user a P&L summary card: ventas, gastos, margen
+
+```
+┌─────────────┐    ┌────────────┐    ┌──────────┐    ┌──────────────┐
+│  WhatsApp   │───▶│   Kapso    │───▶│  Suyapa  │───▶│   Neon DB    │
+│  voice/text │    │ transcribe │    │ extract  │    │  persist tx  │
+└─────────────┘    └────────────┘    └──────────┘    └──────────────┘
+                                          │
+                                          ▼
+                                   ┌──────────────┐
+                                   │ Confirmation │
+                                   │    Card       │
+                                   └──────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) + TypeScript |
+| Chat | [Chat SDK](https://chat-sdk.dev) + [@luicho/kapso-chat-sdk](https://www.npmjs.com/package/@luicho/kapso-chat-sdk) (WhatsApp via Kapso) |
+| AI | [AI SDK 6](https://ai-sdk.dev) + Vercel AI Gateway, Claude Sonnet 4.6 |
+| Database | Postgres (Neon) via Drizzle ORM |
+| State | Redis (Vercel KV / Upstash) via `@chat-adapter/state-redis` |
+| Cron | Vercel Cron (`0 2 * * *` = 20:00 Tegucigalpa) |
+| Linter | Biome |
+| Deploy | Vercel |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project structure
 
-## Learn More
+```
+app/
+├── api/
+│   ├── cron/daily-summary/route.ts   # 8pm P&L summary cron
+│   └── webhooks/whatsapp/route.ts    # Kapso webhook endpoint
+├── globals.css                        # Landing page styles
+├── layout.tsx                         # Root layout (es-HN)
+└── page.tsx                           # Landing page
+lib/
+├── db/
+│   ├── index.ts                       # Neon + Drizzle connection
+│   └── schema.ts                      # users, transactions tables
+├── accounting.ts                      # DB queries, P&L, formatting
+├── env.ts                             # Zod env validation + type augmentation
+├── extraction.ts                      # AI extraction (Zod + Claude)
+└── suyapa-bot.ts                      # Chat SDK bot (Redis state), handlers, cards
+drizzle/                               # Generated SQL migrations
+scripts/
+└── seed.ts                            # Seed demo user
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Data model
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**users** — `id` · `phone` · `business_name` · `created_at`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**transactions** — `id` · `user_id` · `type` (venta | gasto | insumo) · `items` (jsonb) · `total_cents` · `currency` (HNL) · `occurred_at` · `source_message_id` (unique, idempotency key) · `status` (confirmed | deleted) · `created_at`
 
-## Deploy on Vercel
+## Message types
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Input | Handler |
+|-------|---------|
+| Voice note | Kapso transcribes → AI extracts → confirmation card |
+| Text message | AI extracts → confirmation card |
+| `/resumen` or `resumen` | Returns today's P&L card |
+| Button: Borrar | Soft-deletes the transaction |
+| Button: Ver resumen | Returns today's P&L card |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Getting started
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm
+- A [Neon](https://neon.tech) Postgres database
+- Redis (e.g. [Vercel KV](https://vercel.com/docs/storage/vercel-kv) or [Upstash](https://upstash.com))
+- A [Kapso](https://kapso.ai) account with a connected WhatsApp number
+- A [Vercel](https://vercel.com) account (for AI Gateway + deploy)
+
+### Setup
+
+```bash
+# Install dependencies
+pnpm install
+
+# Copy environment variables
+cp .env.example .env.local
+# Fill in DATABASE_URL, KV_URL, KAPSO_API_KEY, KAPSO_PHONE_NUMBER_ID, etc.
+
+# Generate and run database migration
+pnpm db:generate
+pnpm db:migrate
+
+# Seed demo user
+pnpm db:seed
+
+# Start dev server
+pnpm dev
+```
+
+### Kapso webhook
+
+Point your Kapso webhook to:
+
+```
+https://your-domain.com/api/webhooks/whatsapp
+```
+
+Subscribe to `whatsapp.message.received` and `whatsapp.message.sent` events. See the [kapso-chat-sdk docs](https://www.npmjs.com/package/@luicho/kapso-chat-sdk) for detailed setup.
+
+## Available scripts
+
+| Script | Description |
+|--------|-------------|
+| `pnpm dev` | Start Next.js dev server |
+| `pnpm build` | Production build |
+| `pnpm typecheck` | Run TypeScript type checking |
+| `pnpm lint` | Run Biome linter |
+| `pnpm format` | Auto-format with Biome |
+| `pnpm db:generate` | Generate Drizzle migrations |
+| `pnpm db:migrate` | Run pending migrations |
+| `pnpm db:push` | Push schema directly (dev) |
+| `pnpm db:studio` | Open Drizzle Studio |
+| `pnpm db:seed` | Seed demo user |
+
+## Key design decisions
+
+1. **`generateText` + `Output.object()` with Zod** — voice transcripts are messy; Zod `.refine()` validates item totals match, and a 2-attempt retry loop handles transient failures
+2. **Idempotency on `source_message_id`** — Kapso may redeliver; dedupe at both app-level (check before insert) and DB-level (`UNIQUE` + `onConflictDoNothing`)
+3. **Confirmation card as the hero** — voice in → ~1.5s → clean interactive card. That's the demo moment
+
+## Cut for now
+
+- Monthly PDF reports
+- OCR of receipts
+- Multi-currency
+- Multi-user onboarding (hardcoded demo user)
+- Edit-after-confirm (just delete + re-add)
+
+## License
+
+MIT
