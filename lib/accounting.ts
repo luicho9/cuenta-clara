@@ -9,9 +9,9 @@ import {
 } from "@/lib/db/schema";
 import "@/lib/env";
 
-const DEMO_USER_ID = process.env.SUYAPA_DEMO_USER_ID;
-const DEMO_BUSINESS_NAME = process.env.SUYAPA_DEMO_BUSINESS_NAME;
-const DEFAULT_DEMO_PHONE = process.env.SUYAPA_DEMO_PHONE;
+const DEMO_USER_ID = process.env.CUENTA_CLARA_DEMO_USER_ID;
+const DEMO_BUSINESS_NAME = process.env.CUENTA_CLARA_DEMO_BUSINESS_NAME;
+const DEFAULT_DEMO_PHONE = process.env.CUENTA_CLARA_DEMO_PHONE;
 export const TEGUCIGALPA_TIME_ZONE = "America/Tegucigalpa";
 
 export async function getDemoUser(phone = DEFAULT_DEMO_PHONE) {

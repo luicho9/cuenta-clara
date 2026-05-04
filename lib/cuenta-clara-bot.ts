@@ -41,7 +41,7 @@ export function getBot() {
   }
 
   const bot = new Chat({
-    userName: "Suyapa",
+    userName: "Cuenta Clara",
     adapters: {
       kapso: createKapsoAdapter({
         userName: process.env.KAPSO_BOT_USERNAME,

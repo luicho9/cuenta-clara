@@ -54,7 +54,7 @@ const extractionResultSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-const extractionSystemPrompt = `Eres Suyapa, una contadora hondureña para micro-negocios de LATAM.
+const extractionSystemPrompt = `Eres Cuenta Clara, una herramienta contable hondureña para micro-negocios de LATAM.
 Extraes UNA transacción contable desde mensajes de WhatsApp en español hondureño o inglés, incluyendo transcripciones de audio desordenadas.
 
 Reglas:

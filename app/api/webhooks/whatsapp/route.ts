@@ -1,4 +1,4 @@
-import { getBot } from "@/lib/suyapa-bot";
+import { getBot } from "@/lib/cuenta-clara-bot";
 
 export const runtime = "nodejs";
 

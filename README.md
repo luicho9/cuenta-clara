@@ -1,6 +1,6 @@
-# Suyapa - your accountant on WhatsApp
+# Cuenta Clara - your books on WhatsApp
 
-WhatsApp-native AI accountant for LATAM micro-businesses, including barbershops, corner stores, and small shops. Send a voice note in Spanish describing sales and expenses, and Suyapa extracts structured transactions, confirms them through interactive WhatsApp cards, and sends a daily P&L summary at 8 pm.
+WhatsApp-native bookkeeping for LATAM micro-businesses, including barbershops, corner stores, and small shops. Send a voice note in Spanish describing sales and expenses, and Cuenta Clara extracts structured transactions, confirms them through interactive WhatsApp cards, and sends a daily P&L summary at 8 pm.
 
 Built for the **Vercel Zero to Agent hackathon**, ChatSDK Agents track.
 
@@ -8,12 +8,12 @@ Built for the **Vercel Zero to Agent hackathon**, ChatSDK Agents track.
 
 1. **Voice or text** - the owner sends a WhatsApp message, such as _"I sold 3 haircuts at 200 each"_
 2. **AI extraction** - Claude Sonnet 4.6 via AI Gateway parses the message into a structured transaction with type, items, total, and confidence
-3. **Confirmation card** - Suyapa replies with an interactive card showing the itemized transaction, with **Delete** and **View summary** buttons
+3. **Confirmation card** - Cuenta Clara replies with an interactive card showing the itemized transaction, with **Delete** and **View summary** buttons
 4. **Daily close** - at 8 pm Tegucigalpa, a cron job sends each user a P&L summary card with sales, expenses, and margin
 
 ```
 ┌─────────────┐    ┌────────────┐    ┌──────────┐    ┌──────────────┐
-│  WhatsApp   │───▶│   Kapso    │───▶│  Suyapa  │───▶│   Neon DB    │
+│  WhatsApp   │───▶│   Kapso    │───▶│  Cuenta  │───▶│   Neon DB    │
 │  voice/text │    │ transcribe │    │ extract  │    │  persist tx  │
 └─────────────┘    └────────────┘    └──────────┘    └──────────────┘
                                           │
@@ -54,7 +54,7 @@ lib/
 ├── accounting.ts                      # DB queries, P&L, formatting
 ├── env.ts                             # Zod env validation + type augmentation
 ├── extraction.ts                      # AI extraction (Zod + Claude)
-└── suyapa-bot.ts                      # Chat SDK bot (Redis state), handlers, cards
+└── cuenta-clara-bot.ts                # Chat SDK bot (Redis state), handlers, cards
 drizzle/                               # Generated SQL migrations
 scripts/
 └── seed.ts                            # Seed demo user

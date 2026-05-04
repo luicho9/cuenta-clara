@@ -1,8 +1,8 @@
 import { ChatDemo } from "./components/chat-demo";
 import { PhoneFrame } from "./components/phone-frame";
 
-const whatsappNumber = process.env.NEXT_PUBLIC_SUYAPA_WHATSAPP;
-const githubUrl = "https://github.com/luicho9/suyapa";
+const whatsappNumber = process.env.NEXT_PUBLIC_CUENTA_CLARA_WHATSAPP;
+const githubUrl = "https://github.com/luicho9/cuenta-clara";
 const testPrompts = [
   "Vendí 2 sandwiches a 180",
   "Pagué 350 de luz",
@@ -19,8 +19,8 @@ export default function Home() {
           href="/"
           className="flex items-center gap-2 text-[0.95rem] font-semibold tracking-tight text-foreground"
         >
-          <SuyapaMark />
-          Suyapa
+          <CuentaClaraMark />
+          Cuenta Clara
         </a>
         <a
           href={githubUrl}
@@ -34,7 +34,7 @@ export default function Home() {
 
       <section
         className="hero-container pt-10 text-center sm:pt-16"
-        aria-label="Suyapa"
+        aria-label="Cuenta Clara"
       >
         <h1
           className="
@@ -44,8 +44,8 @@ export default function Home() {
             md:text-[3.85rem]
           "
         >
-          <span className="block">Your accountant</span>
-          <span className="block sm:inline">lives on</span>{" "}
+          <span className="block">Your books</span>
+          <span className="block sm:inline">live on</span>{" "}
           <span className="block sm:inline">WhatsApp.</span>
         </h1>
         <p
@@ -55,14 +55,14 @@ export default function Home() {
             sm:text-[1.05rem]
           "
         >
-          Send a voice note, a text, or just type /resumen. Suyapa extracts the
-          transaction, confirms it in WhatsApp, and sends the daily P&amp;L at
-          8pm for micro-businesses in LATAM.
+          Send a voice note, a text, or just type /resumen. Cuenta Clara
+          extracts the transaction, confirms it in WhatsApp, and sends the daily
+          P&amp;L at 8pm for micro-businesses in LATAM.
         </p>
 
         <div className="mt-8 flex flex-col items-center gap-3">
           <a
-            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola Suyapa, vendi una pizza a 150")}`}
+            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola Cuenta Clara, vendi una pizza a 150")}`}
             target="_blank"
             rel="noreferrer"
             className="
@@ -76,7 +76,7 @@ export default function Home() {
               active:translate-y-0
             "
           >
-            Message Suyapa on WhatsApp
+            Message Cuenta Clara on WhatsApp
             <svg
               className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
               viewBox="0 0 24 24"
@@ -133,19 +133,19 @@ export default function Home() {
 
       <section
         className="proof-container mt-12 sm:mt-16"
-        aria-label="What Suyapa does"
+        aria-label="What Cuenta Clara does"
       >
         <div className="grid gap-5 md:grid-cols-[1.05fr_0.95fr]">
           <ProofPanel
             eyebrow="The problem"
             heading="Small shops sell all day, then reconstruct the books from memory."
-            body="Barbers, taquerias, and corner stores already run the business from WhatsApp. Suyapa turns the habit they have into a ledger they can trust: sales, expenses, supplies, and margin."
+            body="Barbers, taquerias, and corner stores already run the business from WhatsApp. Cuenta Clara turns the habit they have into a ledger they can trust: sales, expenses, supplies, and margin."
             className="md:min-h-[310px]"
           />
           <ProofPanel
             eyebrow="The agent loop"
             heading="Voice or text becomes a confirmed transaction."
-            body="Kapso transcribes WhatsApp voice notes, Claude Sonnet 4.6 extracts a typed object, Zod validates it, and Suyapa replies with an interactive card: delete or view summary."
+            body="Kapso transcribes WhatsApp voice notes, Claude Sonnet 4.6 extracts a typed object, Zod validates it, and Cuenta Clara replies with an interactive card: delete or view summary."
             className="md:min-h-[310px]"
           />
         </div>
@@ -251,7 +251,7 @@ function StackPanel() {
   );
 }
 
-function SuyapaMark() {
+function CuentaClaraMark() {
   return (
     <span
       aria-hidden

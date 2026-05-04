@@ -10,7 +10,7 @@ interface ChatItem {
 
 interface ChatMessage {
   id: string;
-  from: "owner" | "suyapa";
+  from: "owner" | "cuenta_clara";
   variant: "voice" | "text" | "card" | "pnl";
   text: string;
   duration?: string;
@@ -28,7 +28,7 @@ const MESSAGES: ChatMessage[] = [
   },
   {
     id: "m2",
-    from: "suyapa",
+    from: "cuenta_clara",
     variant: "card",
     text: "Insumo registrado",
     items: [
@@ -44,7 +44,7 @@ const MESSAGES: ChatMessage[] = [
   },
   {
     id: "m4",
-    from: "suyapa",
+    from: "cuenta_clara",
     variant: "card",
     text: "Venta registrada",
     items: [{ label: "12× taco al pastor", amount: 300 }],
@@ -57,7 +57,7 @@ const MESSAGES: ChatMessage[] = [
   },
   {
     id: "m6",
-    from: "suyapa",
+    from: "cuenta_clara",
     variant: "pnl",
     text: "Cierre del día",
     totals: {
@@ -300,7 +300,9 @@ export function ChatDemo() {
           S
         </span>
         <div className="leading-tight">
-          <strong className="block text-[0.88rem] font-semibold">Suyapa</strong>
+          <strong className="block text-[0.88rem] font-semibold">
+            Cuenta Clara
+          </strong>
           <span className="block text-[0.68rem] opacity-80">en línea</span>
         </div>
         <div className="ml-auto flex items-center gap-3 opacity-90">

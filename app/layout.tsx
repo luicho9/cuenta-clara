@@ -16,9 +16,9 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Suyapa · Your accountant on WhatsApp",
+  title: "Cuenta Clara · Your books on WhatsApp",
   description:
-    "Send a voice note or text. Suyapa logs the sale, tracks the expense, and texts you the daily P&L. Built for LATAM micro-businesses.",
+    "Send a voice note or text. Cuenta Clara logs the sale, tracks the expense, and texts you the daily P&L. Built for LATAM micro-businesses.",
 };
 
 export default function RootLayout({

@@ -1,5 +1,5 @@
 import { listActiveUsers } from "@/lib/accounting";
-import { sendDailySummaryToActiveUser } from "@/lib/suyapa-bot";
+import { sendDailySummaryToActiveUser } from "@/lib/cuenta-clara-bot";
 
 export const runtime = "nodejs";
 
