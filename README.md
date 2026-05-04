@@ -1,15 +1,15 @@
-# Suyapa — tu contadora en WhatsApp
+# Suyapa - your accountant on WhatsApp
 
-WhatsApp-native AI accountant for LATAM micro-businesses (barberías, pulperías, small shops). Send a voice note in Spanish describing sales and expenses — Suyapa extracts structured transactions, confirms via interactive WhatsApp cards, and sends a daily P&L summary at 8 pm.
+WhatsApp-native AI accountant for LATAM micro-businesses, including barbershops, corner stores, and small shops. Send a voice note in Spanish describing sales and expenses, and Suyapa extracts structured transactions, confirms them through interactive WhatsApp cards, and sends a daily P&L summary at 8 pm.
 
 Built for the **Vercel Zero to Agent hackathon**, ChatSDK Agents track.
 
 ## How it works
 
-1. **Voice or text** — the owner sends a WhatsApp message: _"vendí 3 cortes a 200 cada uno"_
-2. **AI extraction** — Claude Sonnet 4.6 via AI Gateway parses the message into a structured transaction (type, items, total, confidence)
-3. **Confirmation card** — Suyapa replies with an interactive card showing the itemized transaction, with **Borrar** and **Ver resumen** buttons
-4. **Daily close** — at 8 pm Tegucigalpa a cron job sends each user a P&L summary card: ventas, gastos, margen
+1. **Voice or text** - the owner sends a WhatsApp message, such as _"I sold 3 haircuts at 200 each"_
+2. **AI extraction** - Claude Sonnet 4.6 via AI Gateway parses the message into a structured transaction with type, items, total, and confidence
+3. **Confirmation card** - Suyapa replies with an interactive card showing the itemized transaction, with **Delete** and **View summary** buttons
+4. **Daily close** - at 8 pm Tegucigalpa, a cron job sends each user a P&L summary card with sales, expenses, and margin
 
 ```
 ┌─────────────┐    ┌────────────┐    ┌──────────┐    ┌──────────────┐
@@ -26,16 +26,16 @@ Built for the **Vercel Zero to Agent hackathon**, ChatSDK Agents track.
 
 ## Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 16 (App Router) + TypeScript |
-| Chat | [Chat SDK](https://chat-sdk.dev) + [@luicho/kapso-chat-sdk](https://www.npmjs.com/package/@luicho/kapso-chat-sdk) (WhatsApp via Kapso) |
-| AI | [AI SDK 6](https://ai-sdk.dev) + Vercel AI Gateway, Claude Sonnet 4.6 |
-| Database | Postgres (Neon) via Drizzle ORM |
-| State | Redis (Vercel KV / Upstash) via `@chat-adapter/state-redis` |
-| Cron | Vercel Cron (`0 2 * * *` = 20:00 Tegucigalpa) |
-| Linter | Biome |
-| Deploy | Vercel |
+| Layer     | Technology                                                                                                                             |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router) + TypeScript                                                                                                   |
+| Chat      | [Chat SDK](https://chat-sdk.dev) + [@luicho/kapso-chat-sdk](https://www.npmjs.com/package/@luicho/kapso-chat-sdk) (WhatsApp via Kapso) |
+| AI        | [AI SDK 6](https://ai-sdk.dev) + Vercel AI Gateway, Claude Sonnet 4.6                                                                  |
+| Database  | Postgres (Supabase) via Drizzle ORM                                                                                                    |
+| State     | Redis (Vercel KV / Upstash) via `@chat-adapter/state-redis`                                                                            |
+| Cron      | Vercel Cron (`0 2 * * *` = 20:00 Tegucigalpa)                                                                                          |
+| Linter    | Biome                                                                                                                                  |
+| Deploy    | Vercel                                                                                                                                 |
 
 ## Project structure
 
@@ -43,13 +43,13 @@ Built for the **Vercel Zero to Agent hackathon**, ChatSDK Agents track.
 app/
 ├── api/
 │   ├── cron/daily-summary/route.ts   # 8pm P&L summary cron
-│   └── webhooks/whatsapp/route.ts    # Kapso webhook endpoint
+│   └── webhooks/whatsapp/route.ts    # WhatsApp webhook endpoint
 ├── globals.css                        # Landing page styles
 ├── layout.tsx                         # Root layout (es-HN)
 └── page.tsx                           # Landing page
 lib/
 ├── db/
-│   ├── index.ts                       # Neon + Drizzle connection
+│   ├── index.ts                       # Supabase + Drizzle connection
 │   └── schema.ts                      # users, transactions tables
 ├── accounting.ts                      # DB queries, P&L, formatting
 ├── env.ts                             # Zod env validation + type augmentation
@@ -60,21 +60,15 @@ scripts/
 └── seed.ts                            # Seed demo user
 ```
 
-## Data model
-
-**users** — `id` · `phone` · `business_name` · `created_at`
-
-**transactions** — `id` · `user_id` · `type` (venta | gasto | insumo) · `items` (jsonb) · `total_cents` · `currency` (HNL) · `occurred_at` · `source_message_id` (unique, idempotency key) · `status` (confirmed | deleted) · `created_at`
-
 ## Message types
 
-| Input | Handler |
-|-------|---------|
-| Voice note | Kapso transcribes → AI extracts → confirmation card |
-| Text message | AI extracts → confirmation card |
-| `/resumen` or `resumen` | Returns today's P&L card |
-| Button: Borrar | Soft-deletes the transaction |
-| Button: Ver resumen | Returns today's P&L card |
+| Input                   | Handler                                             |
+| ----------------------- | --------------------------------------------------- |
+| Voice note              | Kapso transcribes → AI extracts → confirmation card |
+| Text message            | AI extracts → confirmation card                     |
+| `/resumen` or `resumen` | Returns today's P&L card                            |
+| Button: Delete          | Soft-deletes the transaction                        |
+| Button: View summary    | Returns today's P&L card                            |
 
 ## Getting started
 
@@ -108,44 +102,26 @@ pnpm db:seed
 pnpm dev
 ```
 
-### Kapso webhook
-
-Point your Kapso webhook to:
-
-```
-https://your-domain.com/api/webhooks/whatsapp
-```
-
-Subscribe to `whatsapp.message.received` and `whatsapp.message.sent` events. See the [kapso-chat-sdk docs](https://www.npmjs.com/package/@luicho/kapso-chat-sdk) for detailed setup.
-
 ## Available scripts
 
-| Script | Description |
-|--------|-------------|
-| `pnpm dev` | Start Next.js dev server |
-| `pnpm build` | Production build |
-| `pnpm typecheck` | Run TypeScript type checking |
-| `pnpm lint` | Run Biome linter |
-| `pnpm format` | Auto-format with Biome |
-| `pnpm db:generate` | Generate Drizzle migrations |
-| `pnpm db:migrate` | Run pending migrations |
-| `pnpm db:push` | Push schema directly (dev) |
-| `pnpm db:studio` | Open Drizzle Studio |
-| `pnpm db:seed` | Seed demo user |
+| Script             | Description                  |
+| ------------------ | ---------------------------- |
+| `pnpm dev`         | Start Next.js dev server     |
+| `pnpm build`       | Production build             |
+| `pnpm typecheck`   | Run TypeScript type checking |
+| `pnpm lint`        | Run Biome linter             |
+| `pnpm format`      | Auto-format with Biome       |
+| `pnpm db:generate` | Generate Drizzle migrations  |
+| `pnpm db:migrate`  | Run pending migrations       |
+| `pnpm db:push`     | Push schema directly (dev)   |
+| `pnpm db:studio`   | Open Drizzle Studio          |
+| `pnpm db:seed`     | Seed demo user               |
 
 ## Key design decisions
 
-1. **`generateText` + `Output.object()` with Zod** — voice transcripts are messy; Zod `.refine()` validates item totals match, and a 2-attempt retry loop handles transient failures
-2. **Idempotency on `source_message_id`** — Kapso may redeliver; dedupe at both app-level (check before insert) and DB-level (`UNIQUE` + `onConflictDoNothing`)
-3. **Confirmation card as the hero** — voice in → ~1.5s → clean interactive card. That's the demo moment
-
-## Cut for now
-
-- Monthly PDF reports
-- OCR of receipts
-- Multi-currency
-- Multi-user onboarding (hardcoded demo user)
-- Edit-after-confirm (just delete + re-add)
+1. **`generateText` + `Output.object()` with Zod** - voice transcripts are messy; Zod `.refine()` validates item totals match, and a 2-attempt retry loop handles transient failures
+2. **Idempotency on `source_message_id`** - Kapso may redeliver; dedupe at both app-level (check before insert) and DB-level (`UNIQUE` + `onConflictDoNothing`)
+3. **Confirmation card as the hero** - voice in, roughly 1.5s, clean interactive card. That's the demo moment
 
 ## License
 
