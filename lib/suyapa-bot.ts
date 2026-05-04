@@ -276,7 +276,17 @@ function normalizeInboundText(message: Message<unknown>, raw: KapsoRawMessage) {
 }
 
 function isSummaryCommand(text: string) {
-  return /^\/?resumen\b/i.test(text.trim());
+  const normalized = text.trim();
+
+  return (
+    /^\/?(resumen|summary|cierre)\b/i.test(normalized) ||
+    /\b(what did i sell today|today'?s sales|sales today|daily summary)\b/i.test(
+      normalized,
+    ) ||
+    /\b(cu[aá]nto vend[ií] hoy|ventas de hoy|resumen de hoy)\b/i.test(
+      normalized,
+    )
+  );
 }
 
 function getSourceMessageId(message: Message<unknown>, raw: KapsoRawMessage) {

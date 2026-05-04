@@ -39,14 +39,31 @@ export const extractedTransactionSchema = z
 
 export type ExtractedTransaction = z.infer<typeof extractedTransactionSchema>;
 
+const extractionResultSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("transaction"),
+    transaction: extractedTransactionSchema,
+  }),
+  z.object({
+    kind: z.literal("not_transaction"),
+    reason: z
+      .string()
+      .min(2)
+      .describe("Razón breve por la que el mensaje no es una transacción."),
+    confidence: z.number().min(0).max(1),
+  }),
+]);
+
 const extractionSystemPrompt = `Eres Suyapa, una contadora hondureña para micro-negocios de LATAM.
-Extraes UNA transacción contable desde mensajes de WhatsApp en español hondureño, incluyendo transcripciones de audio desordenadas.
+Extraes UNA transacción contable desde mensajes de WhatsApp en español hondureño o inglés, incluyendo transcripciones de audio desordenadas.
 
 Reglas:
+- Entiende mensajes en español e inglés, pero devuelve los valores del esquema exactamente como están definidos.
 - Devuelve siempre HNL (Lempiras) y cantidades en centavos.
 - Clasifica como "venta" cuando entra dinero por ventas o servicios.
 - Clasifica como "gasto" cuando sale dinero por renta, luz, nómina, transporte, comisiones u operación general.
 - Clasifica como "insumo" cuando compra inventario o materiales para vender/prestar servicio, por ejemplo shampoo, tortillas, carne, refrescos, navajas o productos.
+- Si el mensaje es una pregunta, saludo, comando, solicitud de resumen o no contiene un movimiento contable concreto, devuelve kind "not_transaction".
 - Si el usuario se corrige a media frase ("dos cortes... no, esperáte, tres"), usa el último valor mencionado.
 - Si no hay fecha u hora explícita, usa la fecha actual proporcionada.
 - Si falta precio, cantidad, tipo o hay ambigüedad fuerte, baja confidence por debajo de 0.6.
@@ -55,7 +72,10 @@ Reglas:
 Ejemplos:
 - "vendí 3 cortes a 200 cada uno" -> type venta, items [{ description: "corte", quantity: 3, unit_price_cents: 20000 }], total_cents 60000.
 - "compré shampoo por 800" -> type insumo, items [{ description: "shampoo", quantity: 1, unit_price_cents: 80000 }], total_cents 80000.
-- "pagué 350 de luz" -> type gasto, items [{ description: "luz", quantity: 1, unit_price_cents: 35000 }], total_cents 35000.`;
+- "pagué 350 de luz" -> type gasto, items [{ description: "luz", quantity: 1, unit_price_cents: 35000 }], total_cents 35000.
+- "I sold 2 haircuts at 150 each" -> type venta, items [{ description: "haircut", quantity: 2, unit_price_cents: 15000 }], total_cents 30000.
+- "what did I sell today?" -> kind not_transaction.
+- "hola" -> kind not_transaction.`;
 
 export async function extractTransactionFromMessage(
   text: string,
@@ -68,10 +88,10 @@ export async function extractTransactionFromMessage(
       const { output } = await generateText({
         model: gateway("anthropic/claude-sonnet-4.6"),
         output: Output.object({
-          name: "Transaction",
+          name: "TransactionExtractionResult",
           description:
-            "Transacción contable extraída de un mensaje de WhatsApp.",
-          schema: extractedTransactionSchema,
+            "Resultado de extraer una transacción contable de un mensaje de WhatsApp.",
+          schema: extractionResultSchema,
         }),
         system: extractionSystemPrompt,
         prompt: `Fecha actual: ${now.toISOString()}
@@ -79,7 +99,11 @@ Mensaje del dueño:
 ${text}`,
       });
 
-      return output;
+      if (output.kind === "not_transaction") {
+        return null;
+      }
+
+      return output.transaction;
     } catch (error) {
       lastError = error;
     }
