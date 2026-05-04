@@ -45,6 +45,13 @@ const extractionResultSchema = z.discriminatedUnion("kind", [
     transaction: extractedTransactionSchema,
   }),
   z.object({
+    kind: z.literal("summary_request"),
+    reason: z
+      .string()
+      .min(2)
+      .describe("Razón breve por la que el mensaje pide un resumen."),
+  }),
+  z.object({
     kind: z.literal("not_transaction"),
     reason: z
       .string()
@@ -54,16 +61,30 @@ const extractionResultSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-const extractionSystemPrompt = `Eres Cuenta Clara, una herramienta contable hondureña para micro-negocios de LATAM.
-Extraes UNA transacción contable desde mensajes de WhatsApp en español hondureño o inglés, incluyendo transcripciones de audio desordenadas.
+const cuentaClaraSystemPrompt = `Eres Cuenta Clara, un asistente contable hondureño para micro-negocios de LATAM en WhatsApp.
+
+Ayudas al dueño del negocio a registrar ventas, gastos e insumos desde mensajes de texto o transcripciones de audio. También puedes explicar qué haces, pedir datos faltantes y resumir el día cuando te lo soliciten.
+
+Trabaja así:
+1. Entiende primero la intención completa del usuario.
+2. Si el mensaje contiene una transacción concreta, identifica tipo, items, total, fecha y confianza.
+3. Si faltan datos para registrar una transacción, pide solo la información necesaria: cantidad, concepto y precio.
+4. Si el usuario saluda, pregunta qué puedes hacer o hace una pregunta general, responde de forma breve y útil.
+5. No inventes transacciones, precios, cantidades ni fechas explícitas.
+6. Responde en el idioma del usuario y mantén un tono claro, cercano y profesional para WhatsApp.`;
+
+const extractionSystemPrompt = `${cuentaClaraSystemPrompt}
+
+Tu tarea en esta llamada es decidir si el mensaje contiene UNA transacción contable y, si aplica, extraerla con el esquema solicitado.
 
 Reglas:
 - Entiende mensajes en español e inglés, pero devuelve los valores del esquema exactamente como están definidos.
+- Si el usuario pide un resumen, balance, cierre, ventas del día o cuánto vendió, devuelve kind "summary_request".
 - Devuelve siempre HNL (Lempiras) y cantidades en centavos.
 - Clasifica como "venta" cuando entra dinero por ventas o servicios.
 - Clasifica como "gasto" cuando sale dinero por renta, luz, nómina, transporte, comisiones u operación general.
 - Clasifica como "insumo" cuando compra inventario o materiales para vender/prestar servicio, por ejemplo shampoo, tortillas, carne, refrescos, navajas o productos.
-- Si el mensaje es una pregunta, saludo, comando, solicitud de resumen o no contiene un movimiento contable concreto, devuelve kind "not_transaction".
+- Si el mensaje es una pregunta general, saludo o no contiene un movimiento contable concreto, devuelve kind "not_transaction".
 - Si el usuario se corrige a media frase ("dos cortes... no, esperáte, tres"), usa el último valor mencionado.
 - Si no hay fecha u hora explícita, usa la fecha actual proporcionada.
 - Si falta precio, cantidad, tipo o hay ambigüedad fuerte, baja confidence por debajo de 0.6.
@@ -74,13 +95,27 @@ Ejemplos:
 - "compré shampoo por 800" -> type insumo, items [{ description: "shampoo", quantity: 1, unit_price_cents: 80000 }], total_cents 80000.
 - "pagué 350 de luz" -> type gasto, items [{ description: "luz", quantity: 1, unit_price_cents: 35000 }], total_cents 35000.
 - "I sold 2 haircuts at 150 each" -> type venta, items [{ description: "haircut", quantity: 2, unit_price_cents: 15000 }], total_cents 30000.
-- "what did I sell today?" -> kind not_transaction.
+- "what did I sell today?" -> kind summary_request.
+- "give me the summary" -> kind summary_request.
 - "hola" -> kind not_transaction.`;
 
-export async function extractTransactionFromMessage(
+const assistantReplySystemPrompt = `${cuentaClaraSystemPrompt}
+
+Tu tarea en esta llamada es responder de forma conversacional a un mensaje que NO se registró como transacción contable.
+
+Reglas:
+- Contesta en el mismo idioma del usuario.
+- Sé breve, natural y útil para WhatsApp.
+- Si el usuario pregunta qué puedes hacer, explica que puedes registrar ventas, gastos e insumos, y mostrar el resumen del día.
+- Si el usuario parece querer registrar algo pero faltan datos, pide cantidad, concepto y precio.
+- No inventes transacciones ni digas que ya registraste algo.`;
+
+export type AccountingMessageAnalysis = z.infer<typeof extractionResultSchema>;
+
+export async function analyzeAccountingMessage(
   text: string,
   now = new Date(),
-): Promise<ExtractedTransaction | null> {
+): Promise<AccountingMessageAnalysis> {
   let lastError: unknown;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -99,19 +134,43 @@ Mensaje del dueño:
 ${text}`,
       });
 
-      if (output.kind === "not_transaction") {
-        return null;
-      }
-
-      return output.transaction;
+      return output;
     } catch (error) {
       lastError = error;
     }
   }
 
   if (NoOutputGeneratedError.isInstance(lastError)) {
-    return null;
+    return {
+      kind: "not_transaction",
+      reason: "No se pudo generar una clasificación confiable.",
+      confidence: 0,
+    };
   }
 
   throw lastError;
+}
+
+export async function extractTransactionFromMessage(
+  text: string,
+  now = new Date(),
+): Promise<ExtractedTransaction | null> {
+  const output = await analyzeAccountingMessage(text, now);
+
+  if (output.kind !== "transaction") {
+    return null;
+  }
+
+  return output.transaction;
+}
+
+export async function generateAccountingAssistantReply(text: string) {
+  const { text: reply } = await generateText({
+    model: gateway("anthropic/claude-sonnet-4.6"),
+    system: assistantReplySystemPrompt,
+    prompt: `Mensaje del dueño:
+${text}`,
+  });
+
+  return reply.trim();
 }

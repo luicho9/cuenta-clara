@@ -25,7 +25,10 @@ import type {
   Transaction,
   TransactionItem,
 } from "@/lib/db/schema";
-import { extractTransactionFromMessage } from "@/lib/extraction";
+import {
+  analyzeAccountingMessage,
+  generateAccountingAssistantReply,
+} from "@/lib/extraction";
 import "@/lib/env";
 
 const DELETE_ACTION_ID = "delete_transaction";
@@ -143,9 +146,22 @@ async function handleAccountingMessage(
     return;
   }
 
-  const extracted = await extractTransactionFromMessage(text);
+  const analysis = await analyzeAccountingMessage(text);
 
-  if (!extracted || extracted.confidence < 0.6) {
+  if (analysis.kind === "summary_request") {
+    const user = await getDemoUser(readPhoneFromMessage(message, raw));
+    await postSummaryCard(thread, await getTodaySummary(user.id));
+    return;
+  }
+
+  if (analysis.kind === "not_transaction") {
+    await thread.post(await generateAccountingAssistantReply(text));
+    return;
+  }
+
+  const extracted = analysis.transaction;
+
+  if (extracted.confidence < 0.6) {
     await thread.post(
       "No alcancé a entender bien el movimiento. ¿Me lo mandas con cantidad, concepto y precio? Ejemplo: vendí 3 cortes a 200.",
     );
