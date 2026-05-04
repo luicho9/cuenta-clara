@@ -16,9 +16,22 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://cuenta-clara-agent-chat-sdk.vercel.app"),
   title: "Cuenta Clara · Your books on WhatsApp",
   description:
     "Send a voice note or text. Cuenta Clara logs the sale, tracks the expense, and texts you the daily P&L. Built for LATAM micro-businesses.",
+  openGraph: {
+    title: "Cuenta Clara · Your books on WhatsApp",
+    description:
+      "Send a voice note or text. Cuenta Clara logs the sale, tracks the expense, and texts you the daily P&L. Built for LATAM micro-businesses.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cuenta Clara · Your books on WhatsApp",
+    description:
+      "Send a voice note or text. Cuenta Clara logs the sale, tracks the expense, and texts you the daily P&L. Built for LATAM micro-businesses.",
+  },
 };
 
 export default function RootLayout({
