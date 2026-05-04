@@ -1,21 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
+  display: "swap",
+  axes: ["SOFT", "opsz"],
 });
 
 export const metadata: Metadata = {
-  title: "Suyapa - tu contadora en WhatsApp",
+  title: "Suyapa · Your accountant on WhatsApp",
   description:
-    "AI accountant for LATAM micro-businesses. Send a voice note and Suyapa keeps the books.",
+    "Send a voice note or text. Suyapa logs the sale, tracks the expense, and texts you the daily P&L. Built for LATAM micro-businesses.",
 };
 
 export default function RootLayout({
@@ -25,10 +28,12 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es-HN"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang="en"
+      className={`${geist.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full overflow-x-hidden flex flex-col font-sans">
+        {children}
+      </body>
     </html>
   );
 }

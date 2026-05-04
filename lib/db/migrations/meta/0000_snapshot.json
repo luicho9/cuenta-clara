@@ -117,12 +117,8 @@
           "name": "transactions_user_id_users_id_fk",
           "tableFrom": "transactions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -132,9 +128,7 @@
         "transactions_source_message_id_unique": {
           "name": "transactions_source_message_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_message_id"
-          ]
+          "columns": ["source_message_id"]
         }
       },
       "policies": {},
@@ -178,9 +172,7 @@
         "users_phone_unique": {
           "name": "users_phone_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "phone"
-          ]
+          "columns": ["phone"]
         }
       },
       "policies": {},
@@ -192,19 +184,12 @@
     "public.transaction_status": {
       "name": "transaction_status",
       "schema": "public",
-      "values": [
-        "confirmed",
-        "deleted"
-      ]
+      "values": ["confirmed", "deleted"]
     },
     "public.transaction_type": {
       "name": "transaction_type",
       "schema": "public",
-      "values": [
-        "venta",
-        "gasto",
-        "insumo"
-      ]
+      "values": ["venta", "gasto", "insumo"]
     }
   },
   "schemas": {},

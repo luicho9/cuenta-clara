@@ -55,10 +55,7 @@ export const transactions = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("transactions_user_occurred_idx").on(
-      table.userId,
-      table.occurredAt,
-    ),
+    index("transactions_user_occurred_idx").on(table.userId, table.occurredAt),
     index("transactions_status_idx").on(table.status),
   ],
 );
